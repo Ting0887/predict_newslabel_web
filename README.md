@@ -36,6 +36,7 @@ sampled_df = pd.concat(samples)
 
 ## model performance
 * Accuracy = 95.625%, I think it's not so good, some reasons should be considered, if you have some suggestions, you can tell me :)
+
 ![](https://i.imgur.com/1i5XG4Y.png)
 
 

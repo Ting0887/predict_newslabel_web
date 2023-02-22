@@ -6,9 +6,10 @@
 * I will update in the future...
 
 ## model performance
-* Accuracy = 83.75%, I think it's not so good, some reasons should be considered, if you have some suggestions, you can tell me :)
+* Accuracy = 95.625%, I think it's not so good, some reasons should be considered, if you have some suggestions, you can tell me :)
+![](https://i.imgur.com/1i5XG4Y.png)
 
-![](https://i.imgur.com/5GKUO5Z.png)
+
 
 
 ## raw data

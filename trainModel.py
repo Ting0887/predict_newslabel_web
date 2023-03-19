@@ -20,9 +20,10 @@ class Model:
     def labeling(self, csvPath, label_mapping, allNewsDataset):
         li = []
         for data in glob.glob(csvPath):
-            df = pd.read_csv(data, encoding='utf-8-sig')
-            df['target'] = df['label'].map(label_mapping)
-            li.append(df)
+            if 'politics' or 'living' or 'business' or 'health' in data:
+                df = pd.read_csv(data, encoding='utf-8-sig')
+                df['target'] = df['label'].map(label_mapping)
+                li.append(df)
         # 過濾content為nan的值
         pd.concat(li, axis=0, ignore_index=True).dropna(subset=['target'])\
                 .to_csv(allNewsDataset, encoding='utf-8-sig',index=0)
@@ -41,35 +42,20 @@ class Model:
 
     # title and content做斷詞，並寫入原本的csv檔案
     def ArticleCorpus(self, df, allNewsDataset):
-        titles, contents = df['title'], df['content']
         # 載入中文字典
         jieba.load_userdict('dict_taiwan.txt')
         
         # stop words
-        
         with open('stop_word.txt','r',encoding='utf-8') as f:
             for line in f:
-                stop = f.read().splitlines()
+                stopwords = set([line.strip() for line in f])
 
-        for idx, content in enumerate(contents):
-            content_corpus = jieba.cut(content)
-            content_join =  ''
-            for c in content_corpus:
-                #過濾停用字詞
-                if c not in stop:
-                    content_join += ' ' + str(c)
-            df.loc[idx,'content_corpus'] = content_join
+        # 斷詞並過濾停用詞
+        df['content_corpus'] = df['content'].apply(lambda x: ' '.join([w for w in jieba.cut(x) if w not in stopwords]))
+        df['title_corpus'] = df['title'].apply(lambda x: ' '.join([w for w in jieba.cut(x) if w not in stopwords]))
         
-        for idx, title in enumerate(titles):
-            title_corpus = jieba.cut(title)
-            title_join = ''
-            for t in title_corpus:
-                #過濾停用字詞
-                if t not in STOP_WORDS:
-                    title_join += ' ' + str(t)
-            # 寫入 title corpus欄位
-            df.loc[idx,'title_corpus'] = title_join
-        df.to_csv(allNewsDataset, index=0, encoding='utf-8-sig')
+        # 寫入CSV檔案
+        df.to_csv(allNewsDataset, index=False, encoding='utf-8-sig')
 
     # 特徵抽取
     def countVec(self, trainWords):
@@ -80,7 +66,7 @@ class Model:
         return trainX
     
     def TFVec(self, trainWords):
-        tf_vect = TfidfVectorizer(analyzer='word',token_pattern=u"(?u)\\b\\w+\\b", max_features=32, min_df=2)
+        tf_vect = TfidfVectorizer(analyzer='word',token_pattern=u"(?u)\\b\\w+\\b", max_features=30, min_df=2)
         trainX =  tf_vect.fit_transform(trainWords)
         print(trainX)
         trainX = trainX.toarray()
@@ -88,7 +74,7 @@ class Model:
 
     def buildModel(self, X, y):
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=0.1)
-        model = RandomForestClassifier(n_estimators=2200, max_features="auto", max_depth=13, criterion='gini')
+        model = RandomForestClassifier(n_estimators=1000, max_features="auto", min_samples_split = 2, max_depth=30, criterion='gini')
         #model = svm.SVC(kernel='rbf', degree=3, gamma='auto', C=0.5, probability=True)
         model.fit(X_train, y_train)
         pickle.dump(model, open('model.h5', 'wb'))
